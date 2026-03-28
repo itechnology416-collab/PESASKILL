@@ -1,0 +1,35 @@
+{
+  "version": 2,
+  "name": "pesaskill",
+  "builds": [
+    {
+      "src": "pesaskill/backend/server.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "pesaskill/frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "pesaskill/backend/server.js"
+    },
+    {
+      "src": "/assets/(.*)",
+      "dest": "pesaskill/frontend/dist/assets/$1"
+    },
+    {
+      "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))",
+      "dest": "pesaskill/frontend/dist/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "pesaskill/frontend/dist/index.html"
+    }
+  ]
+}
