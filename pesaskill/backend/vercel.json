@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "name": "pesaskill-api",
   "builds": [
     {
       "src": "server.js",
@@ -12,8 +11,5 @@
       "src": "/(.*)",
       "dest": "server.js"
     }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  }
+  ]
 }

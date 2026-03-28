@@ -1,46 +1,40 @@
 # PesaSkill — Vercel Deployment Guide
 
-## Architecture
-- **Frontend** → Vercel Static (React + Vite)
-- **Backend**  → Vercel Serverless (Node.js + Express)
-- **Database** → MongoDB Atlas (free tier)
+## Overview
+Deploy as **two separate Vercel projects**:
+- **Project 1** → Frontend (React/Vite) — root dir: `pesaskill/frontend`
+- **Project 2** → Backend (Node/Express) — root dir: `pesaskill/backend`
 
 ---
 
-## Step 1 — MongoDB Atlas Setup
+## Step 1 — MongoDB Atlas (Database)
 
-1. Go to https://cloud.mongodb.com → Create free cluster
-2. Create a database user (username + password)
-3. Whitelist IP: `0.0.0.0/0` (allow all — required for Vercel)
-4. Get connection string:
+1. Go to https://cloud.mongodb.com → Create free M0 cluster
+2. Database Access → Add user (username + password)
+3. Network Access → Add IP `0.0.0.0/0` (allow all — required for Vercel)
+4. Connect → Drivers → copy connection string:
    ```
-   mongodb+srv://<user>:<password>@cluster0.xxxxx.mongodb.net/pesaskill?retryWrites=true&w=majority
+   mongodb+srv://<user>:<pass>@cluster0.xxxxx.mongodb.net/pesaskill?retryWrites=true&w=majority
    ```
 
 ---
 
-## Step 2 — Deploy Backend to Vercel
+## Step 2 — Deploy Backend
 
-### Option A: Vercel CLI
-```bash
-cd pesaskill/backend
-npx vercel --prod
-```
-
-### Option B: Vercel Dashboard
 1. Go to https://vercel.com/new
-2. Import your GitHub repo: `Abdulmalik-73/PesaSkill-project`
-3. Set **Root Directory** to `pesaskill/backend`
-4. Framework: **Other**
-5. Add Environment Variables (see below)
-6. Deploy
+2. Import `itechnology416-collab/PESASKILL`
+3. **Root Directory** → `pesaskill/backend`
+4. Framework Preset → **Other**
+5. Build Command → *(leave empty)*
+6. Output Directory → *(leave empty)*
+7. Click **Environment Variables** and add:
 
-### Backend Environment Variables (add in Vercel dashboard):
-| Variable | Value |
-|----------|-------|
+| Name | Value |
+|------|-------|
 | `MONGO_URI` | `mongodb+srv://user:pass@cluster.mongodb.net/pesaskill` |
-| `JWT_SECRET` | `your_super_secret_jwt_key_min_32_chars` |
-| `FRONTEND_URL` | `https://pesaskill.vercel.app` |
+| `JWT_SECRET` | `pesaskill_super_secret_jwt_2024_production` |
+| `FRONTEND_URL` | `https://pesaskill-frontend.vercel.app` *(update after frontend deploy)* |
+| `NODE_ENV` | `production` |
 | `MPESA_BASE_URL` | `https://apisandbox.safaricom.et` |
 | `MPESA_CONSUMER_KEY` | `jgdPJACy5TPGniKsmxahZgjYsfCn9ILI2LZanmk5kukRycGd` |
 | `MPESA_CONSUMER_SECRET` | `nLIqp5u77VqO2TKshWYAOaG33sMiCkGh7g6NOcnLKFsoneFpwnwskDaOMWs4Vgc1` |
@@ -49,82 +43,81 @@ npx vercel --prod
 | `MPESA_TIMESTAMP` | `20240918055823` |
 | `MPESA_CALLBACK_URL` | `https://webhook.site/852f46fe-65c6-406a-9466-06fce89d67a2` |
 | `MPESA_INITIATOR_NAME` | `Okay` |
-| `MPESA_SECURITY_CREDENTIAL` | *(from .env.example)* |
-| `NODE_ENV` | `production` |
+| `MPESA_SECURITY_CREDENTIAL` | *(value from .env.example)* |
 
-After deploy, note your backend URL e.g. `https://pesaskill-api.vercel.app`
-
----
-
-## Step 3 — Deploy Frontend to Vercel
-
-### Option A: Vercel CLI
-```bash
-cd pesaskill/frontend
-npx vercel --prod
-```
-
-### Option B: Vercel Dashboard
-1. Go to https://vercel.com/new → Import same repo
-2. Set **Root Directory** to `pesaskill/frontend`
-3. Framework: **Vite**
-4. Build Command: `npm run build`
-5. Output Directory: `dist`
-6. Add Environment Variables (see below)
-7. Deploy
-
-### Frontend Environment Variables:
-| Variable | Value |
-|----------|-------|
-| `VITE_API_URL` | `https://pesaskill-api.vercel.app/api` |
+8. Click **Deploy**
+9. Note your backend URL: `https://pesaskill-api-xxxx.vercel.app`
+10. Test: `https://pesaskill-api-xxxx.vercel.app/api/health`
 
 ---
 
-## Step 4 — Seed the Database (one-time)
+## Step 3 — Deploy Frontend
 
-After backend is deployed, run locally pointing to Atlas:
+1. Go to https://vercel.com/new
+2. Import same repo `itechnology416-collab/PESASKILL`
+3. **Root Directory** → `pesaskill/frontend`
+4. Framework Preset → **Vite**
+5. Build Command → `npm run build`
+6. Output Directory → `dist`
+7. Add Environment Variable:
+
+| Name | Value |
+|------|-------|
+| `VITE_API_URL` | `https://pesaskill-api-xxxx.vercel.app/api` *(your backend URL from Step 2)* |
+
+8. Click **Deploy**
+9. Your frontend is live at: `https://pesaskill-frontend-xxxx.vercel.app`
+
+---
+
+## Step 4 — Update CORS
+
+Go back to your **backend** Vercel project:
+- Settings → Environment Variables
+- Update `FRONTEND_URL` to your actual frontend URL
+- Redeploy (Deployments → Redeploy)
+
+---
+
+## Step 5 — Seed Database (one-time)
+
+Run locally with Atlas URI:
 ```bash
 cd pesaskill/backend
-# Edit .env: set MONGO_URI to your Atlas connection string
+# Set MONGO_URI in .env to your Atlas connection string
 node seed.js
 ```
 
 ---
 
-## Step 5 — Update CORS
+## Troubleshooting
 
-In Vercel backend dashboard, update `FRONTEND_URL` to your actual frontend URL:
-```
-FRONTEND_URL=https://pesaskill-xyz.vercel.app
-```
+### "Page Not Found" on frontend
+- Make sure Root Directory is `pesaskill/frontend` (not the repo root)
+- The `vercel.json` inside `pesaskill/frontend/` handles SPA routing with rewrites
 
----
+### API calls failing (CORS error)
+- Make sure `FRONTEND_URL` in backend env matches your exact frontend URL
+- Redeploy backend after updating env vars
 
-## Quick Deploy (Both at once via root vercel.json)
+### MongoDB connection error
+- Check `MONGO_URI` is correct
+- Make sure `0.0.0.0/0` is whitelisted in Atlas Network Access
 
-From the repo root:
-```bash
-npx vercel --prod
-```
-This uses the root `vercel.json` which builds both frontend and backend.
-
----
-
-## Project URLs (after deploy)
-- Frontend: `https://pesaskill.vercel.app`
-- Backend API: `https://pesaskill-api.vercel.app`
-- Health check: `https://pesaskill-api.vercel.app/api/health`
+### Build fails
+- Check Node version: Vercel uses Node 18 by default
+- Add `"engines": { "node": "18.x" }` to package.json if needed
 
 ---
 
 ## Local Development
 ```bash
-# Terminal 1 — Backend
+# Terminal 1 — Backend (port 5000)
 cd pesaskill/backend
-cp .env.example .env   # fill in values
-npm run dev            # :5000
+cp .env.example .env
+npm run dev
 
-# Terminal 2 — Frontend  
+# Terminal 2 — Frontend (port 5173)
 cd pesaskill/frontend
-npm run dev            # :5173
+npm run dev
 ```
